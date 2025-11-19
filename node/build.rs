@@ -70,12 +70,11 @@ fn fix_blob_file_meta(base_path: &PathBuf) {
 				"#include <cassert>\n#include <cstdint>\n#include <iosfwd>",
 			);
 
-			if let Err(e) = fs::write(&file_path, content) {
-				eprintln!("cargo:warning=Failed to patch blob_file_meta.h: {}", e);
-			} else {
-				println!("cargo:warning=Applied patch to blob_file_meta.h");
-			}
-		}
+							if let Err(e) = fs::write(&file_path, content) {
+								eprintln!("cargo:warning=修补 blob_file_meta.h 失败: {}", e);
+							} else {
+								println!("cargo:warning=已应用补丁到 blob_file_meta.h");
+							}		}
 	}
 }
 
@@ -100,9 +99,9 @@ fn fix_trace_record(base_path: &PathBuf) {
 			);
 
 			if let Err(e) = fs::write(&file_path, content) {
-				eprintln!("cargo:warning=Failed to patch trace_record.h: {}", e);
+				eprintln!("cargo:warning=修补 trace_record.h 失败: {}", e);
 			} else {
-				println!("cargo:warning=Applied patch to trace_record.h");
+				println!("cargo:warning=已应用补丁到 trace_record.h");
 			}
 		}
 	}
