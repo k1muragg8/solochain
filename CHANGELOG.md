@@ -1,0 +1,31 @@
+# 修改记录
+
+本文档记录项目的重要修改内容。
+
+## 2024-11-19
+
+### 出块时间调整
+- 将出块时间从 6 秒调整为 7 秒
+- 修改文件：`runtime/src/lib.rs`
+- 修改内容：`MILLI_SECS_PER_BLOCK` 从 6000 毫秒改为 7000 毫秒
+- 注意：时间常量（MINUTES、HOURS、DAYS）会根据出块时间自动重新计算
+  - 原来：MINUTES = 10 个区块（60 秒），HOURS = 600，DAYS = 14400
+  - 现在：MINUTES = 8 个区块（56 秒），HOURS = 480，DAYS = 11520
+  - 由于整数除法，MINUTES 实际对应 56 秒而不是精确的 60 秒
+
+### 编译问题修复
+- 修复 `librocksdb-sys` 编译错误（缺少 `#include <cstdint>`）
+- 添加自动补丁脚本到 `node/build.rs`，编译时自动修复头文件
+- 修复文件：
+  - `rocksdb/db/blob/blob_file_meta.h`
+  - `rocksdb/include/rocksdb/trace_record.h`
+- 创建说明文档：`ROCKSDB_PATCH.md`
+
+### 代码警告修复
+- 修复 `runtime/src/genesis_config_presets.rs` 中不必要的括号警告
+- 在 `runtime/src/lib.rs` 中添加 `#![allow(unused_parens)]` 屏蔽相关警告
+
+### 文档更新
+- 将 `README.md` 更新为中文版本，内容更详细且简洁
+- 添加编译问题说明和注意事项
+
