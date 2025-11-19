@@ -29,3 +29,17 @@
 - 将 `README.md` 更新为中文版本，内容更详细且简洁
 - 添加编译问题说明和注意事项
 
+## 2024-12-XX
+
+### 代币配置修改
+- 修改链的代币名称为 SGC
+  - 修改文件：`node/src/chain_spec.rs`
+  - 修改内容：将链名称从 "Development" 和 "Local Testnet" 改为 "SGC Development" 和 "SGC Local Testnet"
+- 修改开发版初始代币金额为 10000 SGC
+  - 修改文件：`runtime/src/genesis_config_presets.rs`
+  - 修改内容：将初始代币从 `1u128 << 60` 改为 `10_000 * crate::UNIT`
+- 新增区块奖励功能（500 SGC/区块）
+  - 修改文件：`pallets/template/src/lib.rs`
+  - 修改内容：在 `on_initialize` hook 中实现区块作者奖励机制
+  - 注意：当前实现存在类型转换问题，需要进一步修复
+

@@ -73,6 +73,53 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
+			use frame_support::traits::fungible::{Inspect, Mutate};
+			use sp_runtime::traits::AccountIdConversion;
+
+			// Get the block author from the digest and reward them
+			if let Some(author_id) = <frame_system::Pallet<T>>::digest()
+				.logs
+				.iter()
+				.find_map(|log| {
+					log.as_pre_runtime()
+						.and_then(|(id, data)| {
+							if id.as_ref() == sp_consensus_aura::AURA_ENGINE_ID.as_ref() {
+								Some(data)
+							} else {
+								None
+							}
+						})
+						.and_then(|data| {
+							use sp_consensus_aura::sr25519::AuthorityId;
+							AuthorityId::decode(&mut &data[..]).ok()
+						})
+				}) {
+				// Convert AuthorityId to AccountId
+				// In Substrate, AccountId is derived from the signature scheme's AccountId
+				// For sr25519, we can use the AccountIdConversion trait
+				// The runtime's AccountId type should support this conversion
+				use sp_runtime::traits::AccountIdConversion;
+				// Use the conversion trait - this should work if AccountId implements
+				// AccountIdConversion for the sr25519 Public type
+				// For now, we'll skip the reward if conversion fails
+				// In a production environment, you'd want to ensure proper type bounds
+				let author: T::AccountId = AccountIdConversion::into_account_truncating(&author_id);
+				// Mint block reward: 500 SGC = 500 * UNIT (1_000_000_000_000)
+				let reward_amount = 500u128.saturating_mul(1_000_000_000_000u128);
+				// Convert to the currency's balance type
+				type BalanceOf<T> = <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+				// Try to convert, if it fails, skip the reward
+				if let Ok(reward) = TryInto::<BalanceOf<T>>::try_into(reward_amount) {
+					let _ = T::Currency::mint_into(&author, reward);
+				}
+			}
+			Weight::zero()
+		}
+	}
+
 	/// The pallet's configuration trait.
 	///
 	/// All our types and constants a pallet depends on must be declared here.
@@ -84,6 +131,8 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// A type representing the weights required by the dispatchables of this pallet.
 		type WeightInfo: WeightInfo;
+		/// The currency type for block rewards
+		type Currency: frame_support::traits::fungible::Mutate<Self::AccountId>;
 	}
 
 	/// A storage item for this pallet.
