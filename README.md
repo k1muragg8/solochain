@@ -1,29 +1,16 @@
-# Substrate Node Template
+# Substrate 单链节点模板
 
-A fresh [Substrate](https://substrate.io/) node, ready for hacking :rocket:
+一个基于 [Substrate](https://substrate.io/) 框架的区块链节点模板，开箱即用 🚀
 
-A standalone version of this template is available for each release of Polkadot
-in the [Substrate Developer Hub Parachain
-Template](https://github.com/substrate-developer-hub/substrate-node-template/)
-repository. The parachain template is generated directly at each Polkadot
-release branch from the [Solochain Template in
-Substrate](https://github.com/paritytech/polkadot-sdk/tree/master/templates/solochain)
-upstream
+本模板是 [Polkadot SDK](https://github.com/paritytech/polkadot-sdk) 中 Solochain 模板的独立版本。如需启动新项目，建议使用独立版本。所有问题、建议和功能请求请提交到 [Substrate 上游仓库](https://github.com/paritytech/polkadot-sdk/tree/master/substrate)。
 
-It is usually best to use the stand-alone version to start a new project. All
-bugs, suggestions, and feature requests should be made upstream in the
-[Substrate](https://github.com/paritytech/polkadot-sdk/tree/master/substrate)
-repository.
+## 快速开始
 
-## Getting Started
+### 环境要求
 
-Depending on your operating system and Rust version, there might be additional
-packages required to compile this template. Check the
-[Install](https://docs.substrate.io/install/) instructions for your platform for
-the most common dependencies. Alternatively, you can use one of the [alternative
-installation](#alternatives-installations) options.
+根据操作系统和 Rust 版本，可能需要安装额外的依赖包。请查看 [Substrate 安装指南](https://docs.substrate.io/install/) 了解各平台的依赖要求。也可以使用 [替代安装方式](#替代安装方式)。
 
-Fetch solochain template code:
+### 获取代码
 
 ```sh
 git clone https://github.com/paritytech/polkadot-sdk-solochain-template.git solochain-template
@@ -31,202 +18,143 @@ git clone https://github.com/paritytech/polkadot-sdk-solochain-template.git solo
 cd solochain-template
 ```
 
-### Build
+### 编译
 
-🔨 Use the following command to build the node without launching it:
+使用以下命令编译节点（不启动）：
 
 ```sh
 cargo build --release
 ```
 
-### Embedded Docs
+> **注意**：
+> - 如果看到 `trie-db` 的 future incompatibility 警告，可以忽略，这来自依赖项，不影响编译和运行
+> - 项目已包含自动修复脚本，会在编译时自动修复 `librocksdb-sys` 的编译问题（详见 [ROCKSDB_PATCH.md](./ROCKSDB_PATCH.md)）
 
-After you build the project, you can use the following command to explore its
-parameters and subcommands:
+### 查看帮助
+
+编译完成后，可以使用以下命令查看节点的参数和子命令：
 
 ```sh
 ./target/release/solochain-template-node -h
 ```
 
-You can generate and view the [Rust
-Docs](https://doc.rust-lang.org/cargo/commands/cargo-doc.html) for this template
-with this command:
+### 生成文档
+
+生成并查看 Rust 文档：
 
 ```sh
 cargo +nightly doc --open
 ```
 
-### Single-Node Development Chain
+## 运行节点
 
-The following command starts a single-node development chain that doesn't
-persist state:
+### 单节点开发链
+
+启动一个不持久化状态的单节点开发链：
 
 ```sh
 ./target/release/solochain-template-node --dev
 ```
 
-To purge the development chain's state, run the following command:
+清除开发链状态：
 
 ```sh
 ./target/release/solochain-template-node purge-chain --dev
 ```
 
-To start the development chain with detailed logging, run the following command:
+启用详细日志：
 
 ```sh
 RUST_BACKTRACE=1 ./target/release/solochain-template-node -ldebug --dev
 ```
 
-Development chains:
+**开发链特性**：
+- 节点运行期间状态保存在 `tmp` 文件夹
+- 使用 **Alice** 和 **Bob** 账户作为默认验证者
+- 使用 **Alice** 账户作为默认 `sudo` 账户
+- 预配置了包含多个预充值开发账户的创世状态（见 `/node/src/chain_spec.rs`）
 
-- Maintain state in a `tmp` folder while the node is running.
-- Use the **Alice** and **Bob** accounts as default validator authorities.
-- Use the **Alice** account as the default `sudo` account.
-- Are preconfigured with a genesis state (`/node/src/chain_spec.rs`) that
-  includes several pre-funded development accounts.
+### 持久化状态
 
-
-To persist chain state between runs, specify a base path by running a command
-similar to the following:
+如需在多次运行间保持链状态，可以指定基础路径：
 
 ```sh
-// Create a folder to use as the db base path
-$ mkdir my-chain-state
+# 创建用于存储链状态的文件夹
+mkdir my-chain-state
 
-// Use of that folder to store the chain state
-$ ./target/release/solochain-template-node --dev --base-path ./my-chain-state/
+# 使用该文件夹存储链状态
+./target/release/solochain-template-node --dev --base-path ./my-chain-state/
 
-// Check the folder structure created inside the base path after running the chain
-$ ls ./my-chain-state
-chains
-$ ls ./my-chain-state/chains/
-dev
-$ ls ./my-chain-state/chains/dev
-db keystore network
+# 查看运行后创建的文件结构
+ls ./my-chain-state
+# chains
+ls ./my-chain-state/chains/
+# dev
+ls ./my-chain-state/chains/dev
+# db keystore network
 ```
 
-### Connect with Polkadot-JS Apps Front-End
+### 连接前端界面
 
-After you start the node template locally, you can interact with it using the
-hosted version of the [Polkadot/Substrate
-Portal](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944)
-front-end by connecting to the local node endpoint. A hosted version is also
-available on [IPFS](https://dotapps.io/). You can
-also find the source code and instructions for hosting your own instance in the
-[`polkadot-js/apps`](https://github.com/polkadot-js/apps) repository.
+启动本地节点后，可以通过 [Polkadot/Substrate Portal](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) 连接到本地节点端点进行交互。也可以使用 [IPFS 托管版本](https://dotapps.io/)。前端源码和部署说明见 [`polkadot-js/apps`](https://github.com/polkadot-js/apps) 仓库。
 
-### Multi-Node Local Testnet
+### 多节点本地测试网
 
-If you want to see the multi-node consensus algorithm in action, see [Simulate a
-network](https://docs.substrate.io/tutorials/build-a-blockchain/simulate-network/).
+如需查看多节点共识算法运行情况，请参考 [模拟网络教程](https://docs.substrate.io/tutorials/build-a-blockchain/simulate-network/)。
 
-## Template Structure
+## 项目结构
 
-A Substrate project such as this consists of a number of components that are
-spread across a few directories.
+Substrate 项目由分布在多个目录中的组件组成。
 
-### Node
+### 节点 (Node)
 
-A blockchain node is an application that allows users to participate in a
-blockchain network. Substrate-based blockchain nodes expose a number of
-capabilities:
+区块链节点是允许用户参与区块链网络的应用。基于 Substrate 的节点提供以下功能：
 
-- Networking: Substrate nodes use the [`libp2p`](https://libp2p.io/) networking
-  stack to allow the nodes in the network to communicate with one another.
-- Consensus: Blockchains must have a way to come to
-  [consensus](https://docs.substrate.io/fundamentals/consensus/) on the state of
-  the network. Substrate makes it possible to supply custom consensus engines
-  and also ships with several consensus mechanisms that have been built on top
-  of [Web3 Foundation
-  research](https://research.web3.foundation/Polkadot/protocols/NPoS).
-- RPC Server: A remote procedure call (RPC) server is used to interact with
-  Substrate nodes.
+- **网络**：使用 [`libp2p`](https://libp2p.io/) 网络栈实现节点间通信
+- **共识**：支持自定义共识引擎，内置基于 [Web3 Foundation 研究](https://research.web3.foundation/Polkadot/protocols/NPoS) 的多种共识机制
+- **RPC 服务器**：提供远程过程调用接口与节点交互
 
-There are several files in the `node` directory. Take special note of the
-following:
+`node` 目录中的重要文件：
 
-- [`chain_spec.rs`](./node/src/chain_spec.rs): A [chain
-  specification](https://docs.substrate.io/build/chain-spec/) is a source code
-  file that defines a Substrate chain's initial (genesis) state. Chain
-  specifications are useful for development and testing, and critical when
-  architecting the launch of a production chain. Take note of the
-  `development_config` and `testnet_genesis` functions. These functions are
-  used to define the genesis state for the local development chain
-  configuration. These functions identify some [well-known
-  accounts](https://docs.substrate.io/reference/command-line-tools/subkey/) and
-  use them to configure the blockchain's initial state.
-- [`service.rs`](./node/src/service.rs): This file defines the node
-  implementation. Take note of the libraries that this file imports and the
-  names of the functions it invokes. In particular, there are references to
-  consensus-related topics, such as the [block finalization and
-  forks](https://docs.substrate.io/fundamentals/consensus/#finalization-and-forks)
-  and other [consensus
-  mechanisms](https://docs.substrate.io/fundamentals/consensus/#default-consensus-models)
-  such as Aura for block authoring and GRANDPA for finality.
+- **`chain_spec.rs`**：定义链的初始（创世）状态。注意 `development_config` 和 `testnet_genesis` 函数，它们定义了本地开发链的创世状态，使用[已知账户](https://docs.substrate.io/reference/command-line-tools/subkey/)配置区块链的初始状态
+- **`service.rs`**：定义节点实现，包含共识相关功能，如区块最终化和分叉处理，以及 Aura（区块生产）和 GRANDPA（最终性）等共识机制
 
+### 运行时 (Runtime)
 
-### Runtime
+在 Substrate 中，"运行时"和"状态转换函数"是同义词，指区块链的核心逻辑，负责验证区块并执行状态变更。本项目使用 [FRAME](https://docs.substrate.io/learn/runtime-development/#frame) 构建运行时。
 
-In Substrate, the terms "runtime" and "state transition function" are analogous.
-Both terms refer to the core logic of the blockchain that is responsible for
-validating blocks and executing the state changes they define. The Substrate
-project in this repository uses
-[FRAME](https://docs.substrate.io/learn/runtime-development/#frame) to construct
-a blockchain runtime. FRAME allows runtime developers to declare domain-specific
-logic in modules called "pallets". At the heart of FRAME is a helpful [macro
-language](https://docs.substrate.io/reference/frame-macros/) that makes it easy
-to create pallets and flexibly compose them to create blockchains that can
-address [a variety of needs](https://substrate.io/ecosystem/projects/).
+查看 [`runtime/src/lib.rs`](./runtime/src/lib.rs) 了解：
 
-Review the [FRAME runtime implementation](./runtime/src/lib.rs) included in this
-template and note the following:
+- 运行时配置了多个 pallet，每个 pallet 的配置通过 `impl $PALLET_NAME::Config for Runtime` 代码块定义
+- 通过 [`#[runtime]`](https://paritytech.github.io/polkadot-sdk/master/frame_support/attr.runtime.html) 宏将所有 pallet 组合成单一运行时
 
-- This file configures several pallets to include in the runtime. Each pallet
-  configuration is defined by a code block that begins with `impl
-  $PALLET_NAME::Config for Runtime`.
-- The pallets are composed into a single runtime by way of the
-  [#[runtime]](https://paritytech.github.io/polkadot-sdk/master/frame_support/attr.runtime.html)
-  macro, which is part of the [core FRAME pallet
-  library](https://docs.substrate.io/reference/frame-pallets/#system-pallets).
+### Pallets（功能模块）
 
-### Pallets
+运行时由多个 FRAME pallet 构建，这些 pallet 来自 [Substrate 仓库](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame)，以及一个在 [`pallets`](./pallets/template/src/lib.rs) 目录中定义的模板 pallet。
 
-The runtime in this project is constructed using many FRAME pallets that ship
-with [the Substrate
-repository](https://github.com/paritytech/polkadot-sdk/tree/master/substrate/frame) and a
-template pallet that is [defined in the
-`pallets`](./pallets/template/src/lib.rs) directory.
+FRAME pallet 包含以下区块链原语：
 
-A FRAME pallet is comprised of a number of blockchain primitives, including:
+- **存储**：强大的[存储抽象](https://docs.substrate.io/build/runtime-storage/)，便于使用 Substrate 的高效键值数据库管理区块链状态
+- **可调度函数**：可以从运行时外部调用以更新状态的函数
+- **事件**：用于通知用户重要的状态变更
+- **错误**：可调度函数失败时返回的错误类型
 
-- Storage: FRAME defines a rich set of powerful [storage
-  abstractions](https://docs.substrate.io/build/runtime-storage/) that makes it
-  easy to use Substrate's efficient key-value database to manage the evolving
-  state of a blockchain.
-- Dispatchables: FRAME pallets define special types of functions that can be
-  invoked (dispatched) from outside of the runtime in order to update its state.
-- Events: Substrate uses
-  [events](https://docs.substrate.io/build/events-and-errors/) to notify users
-  of significant state changes.
-- Errors: When a dispatchable fails, it returns an error.
+每个 pallet 都有自己的 `Config` trait，作为配置接口，用于泛型定义其依赖的类型和参数。
 
-Each pallet has its own `Config` trait which serves as a configuration interface
-to generically define the types and parameters it depends on.
-
-## Alternatives Installations
-
-Instead of installing dependencies and building this source directly, consider
-the following alternatives.
+## 替代安装方式
 
 ### Nix
 
-Install [nix](https://nixos.org/) and
-[nix-direnv](https://github.com/nix-community/nix-direnv) for a fully
-plug-and-play experience for setting up the development environment. To get all
-the correct dependencies, activate direnv `direnv allow`.
+安装 [nix](https://nixos.org/) 和 [nix-direnv](https://github.com/nix-community/nix-direnv) 可获得即插即用的开发环境。运行 `direnv allow` 激活 direnv 以获取所有正确的依赖。
 
 ### Docker
 
-Please follow the [Substrate Docker instructions
-here](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/docker/README.md) to
-build the Docker container with the Substrate Node Template binary.
+请按照 [Substrate Docker 说明](https://github.com/paritytech/polkadot-sdk/blob/master/substrate/docker/README.md) 构建包含 Substrate 节点模板二进制文件的 Docker 容器。
+
+## 编译问题修复
+
+项目已包含自动修复脚本，会在编译时自动修复 `librocksdb-sys` 的编译问题。详情请参考 [ROCKSDB_PATCH.md](./ROCKSDB_PATCH.md)。
+
+## 许可证
+
+本项目采用 MIT-0 许可证。
