@@ -77,7 +77,6 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
 			use frame_support::traits::fungible::{Inspect, Mutate};
-			use sp_runtime::traits::AccountIdConversion;
 
 			// Get the block author from the digest and reward them
 			if let Some(author_id) = <frame_system::Pallet<T>>::digest()
@@ -97,23 +96,18 @@ pub mod pallet {
 							AuthorityId::decode(&mut &data[..]).ok()
 						})
 				}) {
-				// Convert AuthorityId to AccountId
-				// In Substrate, AccountId is derived from the signature scheme's AccountId
-				// For sr25519, we can use the AccountIdConversion trait
-				// The runtime's AccountId type should support this conversion
-				use sp_runtime::traits::AccountIdConversion;
-				// Use the conversion trait - this should work if AccountId implements
-				// AccountIdConversion for the sr25519 Public type
-				// For now, we'll skip the reward if conversion fails
-				// In a production environment, you'd want to ensure proper type bounds
-				let author: T::AccountId = AccountIdConversion::into_account_truncating(&author_id);
-				// Mint block reward: 500 SGC = 500 * UNIT (1_000_000_000_000)
-				let reward_amount = 500u128.saturating_mul(1_000_000_000_000u128);
-				// Convert to the currency's balance type
-				type BalanceOf<T> = <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
-				// Try to convert, if it fails, skip the reward
-				if let Ok(reward) = TryInto::<BalanceOf<T>>::try_into(reward_amount) {
-					let _ = T::Currency::mint_into(&author, reward);
+				// The block author's account ID is derived from the author's public key.
+				// We can decode the AccountId from the bytes of the author's public key.
+				let mut author_bytes: &[u8] = author_id.as_ref();
+				if let Ok(author) = T::AccountId::decode(&mut author_bytes) {
+					// Mint block reward: 500 SGC = 500 * UNIT (1_000_000_000_000)
+					let reward_amount = 500u128.saturating_mul(1_000_000_000_000u128);
+					// Convert to the currency's balance type
+					type BalanceOf<T> = <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+					// Try to convert, if it fails, skip the reward
+					if let Ok(reward) = TryInto::<BalanceOf<T>>::try_into(reward_amount) {
+						let _ = T::Currency::mint_into(&author, reward);
+					}
 				}
 			}
 			Weight::zero()
