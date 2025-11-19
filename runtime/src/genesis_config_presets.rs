@@ -35,7 +35,7 @@ fn testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 10_000 * crate::UNIT))
+				.map(|k| (k, 1000 * crate::UNIT))
 				.collect::<Vec<_>>(),
 		},
 		aura: pallet_aura::GenesisConfig {

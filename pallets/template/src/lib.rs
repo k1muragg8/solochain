@@ -100,11 +100,10 @@ pub mod pallet {
 				// We can decode the AccountId from the bytes of the author's public key.
 				let mut author_bytes: &[u8] = author_id.as_ref();
 				if let Ok(author) = T::AccountId::decode(&mut author_bytes) {
-					// Mint block reward: 500 SGC = 500 * UNIT (1_000_000_000_000)
-					let reward_amount = 500u128.saturating_mul(1_000_000_000_000u128);
-					// Convert to the currency's balance type
-					type BalanceOf<T> = <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
-					// Try to convert, if it fails, skip the reward
+					// Mint block reward
+					type BalanceOf<T> =
+						<<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+					let reward_amount = T::BlockReward::get();
 					if let Ok(reward) = TryInto::<BalanceOf<T>>::try_into(reward_amount) {
 						let _ = T::Currency::mint_into(&author, reward);
 					}
@@ -127,6 +126,8 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 		/// The currency type for block rewards
 		type Currency: frame_support::traits::fungible::Mutate<Self::AccountId>;
+		/// The amount of reward given to the block author
+		type BlockReward: Get<u128>;
 	}
 
 	/// A storage item for this pallet.
