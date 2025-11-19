@@ -1,0 +1,4 @@
+# Cargo 配置文件
+# 屏蔽 future-incompat 警告（来自依赖项，如 trie-db）
+# 注意：这个警告来自依赖项，不影响编译和运行
+# 如需屏蔽，可在编译时设置环境变量：CARGO_FUTURE_INCOMPAT_REPORT=0 cargo build
