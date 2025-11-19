@@ -121,7 +121,7 @@ pub mod pallet {
 				// Mint block reward
 				let reward_amount = T::BlockReward::get();
 				let reward_amount_balance = BalanceOf::<T>::try_from(reward_amount).ok().unwrap();
-				<T as Config>::Currency::deposit_creating(&author, reward_amount_balance);
+				let _ = <T as Config>::Currency::deposit_creating(&author, reward_amount_balance);
 			}
 			Weight::zero()
 		}
