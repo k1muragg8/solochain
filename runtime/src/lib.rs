@@ -84,7 +84,7 @@ mod block_times {
 	/// slot_duration()`.
 	///
 	/// Change this to adjust the block time.
-	pub const MILLI_SECS_PER_BLOCK: u64 = 6000;
+	pub const MILLI_SECS_PER_BLOCK: u64 = 7000;
 
 	// NOTE: Currently it is not possible to change the slot duration after the chain has started.
 	// Attempting to do so will brick block production.
@@ -93,6 +93,8 @@ mod block_times {
 pub use block_times::*;
 
 // Time is measured by number of blocks.
+// 注意：这些常量会根据 MILLI_SECS_PER_BLOCK 自动计算
+// 由于整数除法，MINUTES 可能不完全等于 60 秒（例如：8 个区块 * 7 秒 = 56 秒）
 pub const MINUTES: BlockNumber = 60_000 / (MILLI_SECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
