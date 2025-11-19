@@ -73,41 +73,55 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	impl<T: Config> Pallet<T> {
+		fn get_author() -> Option<T::AccountId> {
+			<frame_system::Pallet<T>>::digest().logs.iter().find_map(|log| {
+				log.as_pre_runtime().and_then(|(id, data)| {
+					if id.as_ref() == sp_consensus_aura::AURA_ENGINE_ID.as_ref() {
+						Some(data)
+					} else {
+						None
+					}
+				}).and_then(|data| {
+					use sp_consensus_aura::sr25519::AuthorityId;
+					AuthorityId::decode(&mut &data[..]).ok()
+				})
+			}).and_then(|author_id| {
+				let mut author_bytes: &[u8] = author_id.as_ref();
+				T::AccountId::decode(&mut author_bytes).ok()
+			})
+		}
+	}
+
+	use frame_support::traits::{Currency, OnUnbalanced, Imbalance};
+	type NegativeImbalanceOf<T> =
+		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+	type BalanceOf<T> =
+		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+	pub struct DealWithFees<T>(core::marker::PhantomData<T>);
+	impl<T: Config> OnUnbalanced<NegativeImbalanceOf<T>> for DealWithFees<T> {
+		fn on_unbalanceds(mut fees_then_tips: impl Iterator<Item = NegativeImbalanceOf<T>>) {
+			if let Some(mut fees) = fees_then_tips.next() {
+				if let Some(tips) = fees_then_tips.next() {
+					fees.subsume(tips);
+				}
+				if let Some(author) = Pallet::<T>::get_author() {
+					let _ = <T as Config>::Currency::deposit_creating(&author, fees.peek());
+				}
+			}
+		}
+	}
+
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			use frame_support::traits::fungible::{Inspect, Mutate};
-
 			// Get the block author from the digest and reward them
-			if let Some(author_id) = <frame_system::Pallet<T>>::digest()
-				.logs
-				.iter()
-				.find_map(|log| {
-					log.as_pre_runtime()
-						.and_then(|(id, data)| {
-							if id.as_ref() == sp_consensus_aura::AURA_ENGINE_ID.as_ref() {
-								Some(data)
-							} else {
-								None
-							}
-						})
-						.and_then(|data| {
-							use sp_consensus_aura::sr25519::AuthorityId;
-							AuthorityId::decode(&mut &data[..]).ok()
-						})
-				}) {
-				// The block author's account ID is derived from the author's public key.
-				// We can decode the AccountId from the bytes of the author's public key.
-				let mut author_bytes: &[u8] = author_id.as_ref();
-				if let Ok(author) = T::AccountId::decode(&mut author_bytes) {
-					// Mint block reward
-					type BalanceOf<T> =
-						<<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
-					let reward_amount = T::BlockReward::get();
-					if let Ok(reward) = TryInto::<BalanceOf<T>>::try_into(reward_amount) {
-						let _ = T::Currency::mint_into(&author, reward);
-					}
-				}
+			if let Some(author) = Self::get_author() {
+				// Mint block reward
+				let reward_amount = T::BlockReward::get();
+				let reward_amount_balance = BalanceOf::<T>::try_from(reward_amount).ok().unwrap();
+				<T as Config>::Currency::deposit_creating(&author, reward_amount_balance);
 			}
 			Weight::zero()
 		}
@@ -125,7 +139,7 @@ pub mod pallet {
 		/// A type representing the weights required by the dispatchables of this pallet.
 		type WeightInfo: WeightInfo;
 		/// The currency type for block rewards
-		type Currency: frame_support::traits::fungible::Mutate<Self::AccountId>;
+		type Currency: Currency<Self::AccountId>;
 		/// The amount of reward given to the block author
 		type BlockReward: Get<u128>;
 	}
