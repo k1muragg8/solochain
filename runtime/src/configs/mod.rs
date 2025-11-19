@@ -164,4 +164,5 @@ impl pallet_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
 	type Currency = Balances;
+	type BlockReward = frame_support::traits::ConstU128<10_000_000_000_000>;
 }

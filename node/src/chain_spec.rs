@@ -1,16 +1,15 @@
 use sc_service::ChainType;
-use serde_json::json;
 use solochain_template_runtime::WASM_BINARY;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec;
 
-fn sgc_properties() -> serde_json::Value {
-	json!({
-		"tokenDecimals": 12,
-		"tokenSymbol": "SGC",
-		"ss58Format": 42
-	})
+fn sgc_properties() -> sc_service::Properties {
+	let mut properties = sc_service::Properties::new();
+	properties.insert("tokenSymbol".into(), "SGC".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+	properties.insert("ss58Format".into(), 42.into());
+	properties
 }
 
 pub fn development_chain_spec() -> Result<ChainSpec, String> {
