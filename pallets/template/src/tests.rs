@@ -22,3 +22,14 @@ fn correct_error_for_none_value() {
 		assert_noop!(Template::cause_error(RuntimeOrigin::signed(1)), Error::<Test>::NoneValue);
 	});
 }
+
+#[test]
+fn block_reward_works() {
+	new_test_ext().execute_with(|| {
+		// Trigger on_initialize
+		let _ = Template::on_initialize(1);
+
+		// Check if account 1 received the reward (10)
+		assert_eq!(Balances::free_balance(1), 10);
+	});
+}

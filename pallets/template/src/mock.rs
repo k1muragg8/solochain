@@ -69,6 +69,17 @@ impl pallet_template::Config for Test {
 	type WeightInfo = ();
 	type Currency = Balances;
 	type BlockReward = BlockReward;
+	type FindAuthor = MockFindAuthor;
+}
+
+pub struct MockFindAuthor;
+impl frame_support::traits::FindAuthor<AccountId> for MockFindAuthor {
+	fn find_author<'a, I>(_: I) -> Option<AccountId>
+	where
+		I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
+	{
+		Some(1) // Always return account 1 as author
+	}
 }
 
 // Build genesis storage according to the mock runtime.
