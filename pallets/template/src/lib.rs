@@ -93,21 +93,21 @@ pub mod pallet {
 		}
 	}
 
-	use frame_support::traits::{Currency, OnUnbalanced, Imbalance};
-	type NegativeImbalanceOf<T> =
-		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+	use frame_support::traits::{Currency, OnUnbalanced, Imbalance, fungible::{Balanced, Credit}};
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	pub struct DealWithFees<T>(core::marker::PhantomData<T>);
-	impl<T: Config> OnUnbalanced<NegativeImbalanceOf<T>> for DealWithFees<T> {
-		fn on_unbalanceds(mut fees_then_tips: impl Iterator<Item = NegativeImbalanceOf<T>>) {
+
+	// Implementation for fungible::Credit to support FungibleAdapter
+	impl<T: Config> OnUnbalanced<Credit<T::AccountId, T::Currency>> for DealWithFees<T> {
+		fn on_unbalanceds(mut fees_then_tips: impl Iterator<Item = Credit<T::AccountId, T::Currency>>) {
 			if let Some(mut fees) = fees_then_tips.next() {
 				if let Some(tips) = fees_then_tips.next() {
-					fees.subsume(tips);
+					let _ = fees.subsume(tips);
 				}
 				if let Some(author) = Pallet::<T>::get_author() {
-					let _ = <T as Config>::Currency::deposit_creating(&author, fees.peek());
+					let _ = <T::Currency as Balanced<T::AccountId>>::resolve(&author, fees);
 				}
 			}
 		}
@@ -139,7 +139,7 @@ pub mod pallet {
 		/// A type representing the weights required by the dispatchables of this pallet.
 		type WeightInfo: WeightInfo;
 		/// The currency type for block rewards
-		type Currency: Currency<Self::AccountId>;
+		type Currency: Currency<Self::AccountId> + Balanced<Self::AccountId>;
 		/// The amount of reward given to the block author
 		type BlockReward: Get<u128>;
 	}

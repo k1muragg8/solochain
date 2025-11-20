@@ -233,23 +233,3 @@ mod runtime {
 	pub type Template = pallet_template;
 }
 
-use pallet_transaction_payment::{CurrencyAdapter, TargetedFeeAdjustment};
-use sp_runtime::traits::Get;
-
-type DealWithFees = pallet_template::DealWithFees<Runtime>;
-
-pub struct Constants;
-impl Get<Balance> for Constants {
-	fn get() -> Balance {
-		UNIT
-	}
-}
-
-impl pallet_transaction_payment::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees>;
-	type OperationalFeeMultiplier = ();
-	type WeightToFee = ();
-	type LengthToFee = ();
-	type FeeMultiplierUpdate = ();
-}
