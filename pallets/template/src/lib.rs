@@ -39,6 +39,9 @@
 // We make sure this pallet uses `no_std` for compiling to Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
+
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
 
@@ -76,6 +79,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 	}
 
+
 	use frame_support::traits::{Currency, OnUnbalanced, Imbalance, fungible::{Balanced, Credit}, FindAuthor};
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -87,9 +91,11 @@ pub mod pallet {
 		fn on_unbalanceds(mut fees_then_tips: impl Iterator<Item = Credit<T::AccountId, T::Currency>>) {
 			if let Some(mut fees) = fees_then_tips.next() {
 				if let Some(tips) = fees_then_tips.next() {
-					let _ = fees.subsume(tips);
+					fees.subsume(tips);
 				}
-				if let Some(author) = T::FindAuthor::find_author::<'_, Vec<_>>(Default::default()) {
+				if let Some(author) = T::FindAuthor::find_author(
+					<frame_system::Pallet<T>>::digest().logs.iter().filter_map(|d| d.as_pre_runtime())
+				) {
 					let _ = <T::Currency as Balanced<T::AccountId>>::resolve(&author, fees);
 				}
 			}
@@ -98,15 +104,19 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			// Get the block author from the digest and reward them
-			if let Some(author) = T::FindAuthor::find_author::<'_, Vec<_>>(Default::default()) {
+		fn on_finalize(_n: BlockNumberFor<T>) {
+			// Get the block author and reward them
+			// Note: We use on_finalize instead of on_initialize because
+			// the block author information is only available after the block is finalized
+			if let Some(author) = T::FindAuthor::find_author(
+				<frame_system::Pallet<T>>::digest().logs.iter().filter_map(|d| d.as_pre_runtime())
+			) {
 				// Mint block reward
 				let reward_amount = T::BlockReward::get();
-				let reward_amount_balance = BalanceOf::<T>::try_from(reward_amount).ok().unwrap();
-				let _ = <T as Config>::Currency::deposit_creating(&author, reward_amount_balance);
+				if let Ok(reward_amount_balance) = BalanceOf::<T>::try_from(reward_amount) {
+					let _ = <T as Config>::Currency::deposit_creating(&author, reward_amount_balance);
+				}
 			}
-			Weight::zero()
 		}
 	}
 

@@ -1,5 +1,5 @@
 use crate::{mock::*, Error, Event, Something};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::Hooks};
 
 #[test]
 fn it_works_for_default_value() {
@@ -26,8 +26,8 @@ fn correct_error_for_none_value() {
 #[test]
 fn block_reward_works() {
 	new_test_ext().execute_with(|| {
-		// Trigger on_initialize
-		let _ = Template::on_initialize(1);
+		// Trigger on_finalize
+		Template::on_finalize(1);
 
 		// Check if account 1 received the reward (10)
 		assert_eq!(Balances::free_balance(1), 10);

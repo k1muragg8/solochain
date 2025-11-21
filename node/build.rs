@@ -50,7 +50,7 @@ fn apply_rocksdb_patches() {
 	}
 }
 
-fn fix_blob_file_meta(base_path: &PathBuf) {
+fn fix_blob_file_meta(base_path: &std::path::Path) {
 	let file_path = base_path.join("rocksdb/db/blob/blob_file_meta.h");
 	
 	if !file_path.exists() {
@@ -78,7 +78,7 @@ fn fix_blob_file_meta(base_path: &PathBuf) {
 	}
 }
 
-fn fix_trace_record(base_path: &PathBuf) {
+fn fix_trace_record(base_path: &std::path::Path) {
 	let file_path = base_path.join("rocksdb/include/rocksdb/trace_record.h");
 	
 	if !file_path.exists() {
